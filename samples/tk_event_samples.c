@@ -23,7 +23,7 @@ struct tk_event event1;
 #define event1_flag2 (1 << 2)
 
 /* 事件2句柄 */
-tk_event_t event2 = NULL;
+struct tk_event *event2 = NULL;
 /* 事件2标志 */
 #define event2_flag1 (1 << 1)
 #define event2_flag2 (1 << 2)

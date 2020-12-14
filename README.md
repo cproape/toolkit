@@ -1,6 +1,6 @@
 # ToolKit
 
-![version](https://img.shields.io/badge/version-V1.0.0-brightgreen.svg) ![date](https://img.shields.io/badge/date-2019.01.31-brightgreen.svg) 
+![version](https://img.shields.io/badge/version-V1.0.6-brightgreen.svg) ![date](https://img.shields.io/badge/date-2020.12.09-brightgreen.svg) 
 
 ## 1、介绍
 
@@ -65,7 +65,7 @@ toolkit
   | 宏定义                          | 描述                               |
   | ------------------------------- | ---------------------------------- |
   | TK_TIMER_USING_CREATE           | Timer 软件定时器使用动态创建和删除 |
-  | TK_TIMER_USING_INTERVAL         | Timer 软件定时器使用为间隔模式     |
+  | TK_TIMER_USING_INTERVAL         | Timer 软件定时器使用间隔模式       |
   | TK_TIMER_USING_TIMEOUT_CALLBACK | Timer 软件定时器使用超时回调函数   |
 
 - **Event 事件集配置项**
@@ -89,12 +89,13 @@ toolkit
 > **注意**：当配置**TOOLKIT_USING_QUEUE**后，才能使用此函数。此函数需要用到**malloc**。
 
 ```c
-tk_queue_t tk_queue_create(uint16_t poolsize, bool keep_fresh);
+struct tk_queue *tk_queue_create(uint16_t queue_size, uint16_t max_queues, bool keep_fresh);
 ```
 
 | 参数       | 描述                                                         |
 | ---------- | ------------------------------------------------------------ |
-| poolsize   | 缓存区大小(单位字节)                                         |
+| queue_size | 缓存区大小(单位字节)                                         |
+| max_queues | 最大队列个数                                                 |
 | keep_fresh | 是否为保持最新模式，**true**：保持最新；**false**：默认(存满不能再存) |
 | 返回值     | 创建的队列对象（**NULL**为创建失败）                         |
 
@@ -104,7 +105,7 @@ tk_queue_t tk_queue_create(uint16_t poolsize, bool keep_fresh);
 int main(int argc, char *argv[])
 {
     /* 动态方式创建一个循环队"queue",缓冲区大小50字节，不保持最新 */
-    tk_queue_t queue = tk_queue_create(50, false);
+    struct tk_queue *queue = tk_queue_create(50, 1, false);
     if( queue == NULL){
         printf("队列创建失败!\n");
     }
@@ -119,7 +120,7 @@ int main(int argc, char *argv[])
 > **注意**：当配置**TOOLKIT_USING_QUEUE**后，才能使用此函数。此函数需要用到**free**。必须为**动态**方式创建的队列对象。
 
 ```c
-bool tk_queue_delete(tk_queue_t queue);
+bool tk_queue_delete(struct tk_queue *queue);
 ```
 
 | 参数   | 描述                                    |
@@ -130,14 +131,15 @@ bool tk_queue_delete(tk_queue_t queue);
 #### **3.2.3** 静态初始化队列
 
 ```c
-bool tk_queue_init(tk_queue_t queue, uint8_t *pool, uint16_t poolsize, bool keep_fresh);
+bool tk_queue_init(struct tk_queue *queue, void *queuepool, uint16_t pool_size, uint16_t queue_size, bool keep_fresh);
 ```
 
 | 参数       | 描述                                                         |
 | ---------- | ------------------------------------------------------------ |
 | queue      | 要初始化的队列对象                                           |
-| *pool      | 缓冲区首地址                                                 |
-| poolsize   | 缓冲区长度                                                   |
+| *queuepool | 队列缓存区                                                   |
+| pool_size  | 缓存区大小(单位字节)                                         |
+| queue_size | 队列元素大小(单位字节)                                       |
 | keep_fresh | 是否为保持最新模式，**true**：保持最新；**false**：默认(存满不能再存) |
 | 返回值     | **true**：初始化成功；**false**：初始化失败                  |
 
@@ -151,7 +153,8 @@ int main(int argc, char *argv[])
     /* 定义循环队列缓冲区 */
     uint8_t queue_pool[100];
     /* 静态方式创建一个循环队列"queue",缓存区为queue_pool，大小为queue_pool的大小,模式为保持最新 */
-    if( tk_queue_init(&queue, queue_pool, sizeof(queue_pool), true) == false){
+    if( tk_queue_init(&queue, queue_pool, sizeof(queue_pool), 
+                      sizeof(queue_pool[0]), true) == false){
         printf("队列创建失败!\n");
     }
     /* ... */
@@ -165,7 +168,7 @@ int main(int argc, char *argv[])
 > **注意**: 会使缓存区脱离与队列的关联。必须为**静态**方式创建的队列对象。
 
 ```c
-bool tk_queue_detach(tk_queue_t queue);
+bool tk_queue_detach(struct tk_queue *queue);
 ```
 
 | 参数   | 描述                                    |
@@ -173,10 +176,21 @@ bool tk_queue_detach(tk_queue_t queue);
 | queue  | 要脱离的队列对象                        |
 | 返回值 | **true**：脱离成功；**false**：脱离失败 |
 
-#### 3.2.5 判断队列是否为空
+#### 3.2.5 清空队列
 
 ```c
-bool tk_queue_empty(tk_queue_t queue);
+bool tk_queue_clean(struct tk_queue *queue);
+```
+
+| 参数   | 描述                                    |
+| ------ | --------------------------------------- |
+| queue  | 要清空的队列对象                        |
+| 返回值 | **true**：清除成功；**false**：清除失败 |
+
+#### 3.2.6 判断队列是否为空
+
+```c
+bool tk_queue_empty(struct tk_queue *queue);
 ```
 
 | 参数   | 描述                            |
@@ -184,10 +198,10 @@ bool tk_queue_empty(tk_queue_t queue);
 | queue  | 要查询的队列对象                |
 | 返回值 | **true**：空；**false**：不为空 |
 
-#### 3.2.6 判断队列是否已满
+#### 3.2.7 判断队列是否已满
 
 ```c
-bool tk_queue_full(tk_queue_t queue);
+bool tk_queue_full(struct tk_queue *queue);
 ```
 
 | 参数   | 描述                            |
@@ -195,22 +209,45 @@ bool tk_queue_full(tk_queue_t queue);
 | queue  | 要查询的队列对象                |
 | 返回值 | **true**：满；**false**：不为满 |
 
-#### 3.2.7 向队列压入(入队)1字节数据
+#### 3.2.8 从队列中读取一个元素(不从队列中删除)
 
 ```c
-bool tk_queue_push(tk_queue_t queue, uint8_t val);
+bool tk_queue_peep(struct tk_queue *queue, void *pval);
+```
+
+| 参数   | 描述                                    |
+| ------ | --------------------------------------- |
+| queue  | 队列对象                                |
+| *pval  | 读取值地址                              |
+| 返回值 | **true**：读取成功；**false**：读取失败 |
+
+#### 3.2.9 移除一个元素
+
+```c
+bool tk_queue_remove(struct tk_queue *queue);
+```
+
+| 参数   | 描述                                    |
+| ------ | --------------------------------------- |
+| queue  | 要移除元素的对象                        |
+| 返回值 | **true**：移除成功；**false**：移除失败 |
+
+#### 3.2.10 向队列压入(入队)1个元素数据
+
+```c
+bool tk_queue_push(struct tk_queue *queue, void *val);
 ```
 
 | 参数   | 描述                            |
 | ------ | ------------------------------- |
 | queue  | 要压入的队列对象                |
-| val    | 压入值                          |
+| *val   | 压入值                          |
 | 返回值 | **true**：成功；**false**：失败 |
 
-#### 3.2.8 从队列弹出(出队)1字节数据
+#### 3.2.11 从队列弹出(出队)1个元素数据
 
 ```c
-bool tk_queue_pop(tk_queue_t queue, uint8_t *pval);
+bool tk_queue_pop(struct tk_queue *queue, void *pval);
 ```
 
 | 参数   | 描述                            |
@@ -219,10 +256,10 @@ bool tk_queue_pop(tk_queue_t queue, uint8_t *pval);
 | *pval  | 弹出值                          |
 | 返回值 | **true**：成功；**false**：失败 |
 
-#### 3.2.9 查询队列当前数据长度
+#### 3.2.12 查询队列当前数据长度
 
 ```c
-uint16_t tk_queue_curr_len(tk_queue_t queue);
+uint16_t tk_queue_curr_len(struct tk_queue *queue);
 ```
 
 | 参数   | 描述             |
@@ -230,31 +267,31 @@ uint16_t tk_queue_curr_len(tk_queue_t queue);
 | queue  | 要查询的队列对象 |
 | 返回值 | 队列数据当前长度 |
 
-#### 3.2.10 向队列压入(入队)多个字节数据
+#### 3.2.13 向队列压入(入队)多个元素数据
 
 ```c
-uint16_t tk_queue_push_multi(tk_queue_t queue, uint8_t *pval, uint16_t len);
+uint16_t tk_queue_push_multi(struct tk_queue *queue, void *pval, uint16_t len);
 ```
 
 | 参数   | 描述             |
 | ------ | ---------------- |
 | queue  | 要压入的队列对象 |
 | *pval  | 压入数据首地址   |
-| len    | 压入数据长度     |
-| 返回值 | 实际压入长度     |
+| len    | 压入元素个数     |
+| 返回值 | 实际压入个数     |
 
-#### 3.2.11 从队列弹出(出队)多字节数据
+#### 3.2.14 从队列弹出(出队)多个元素数据
 
 ```c
-uint16_t tk_queue_pop_multi(tk_queue_t queue, uint8_t *pval, uint16_t len);
+uint16_t tk_queue_pop_multi(struct tk_queue *queue, void *pval, uint16_t len);
 ```
 
 | 参数   | 描述                 |
 | ------ | -------------------- |
 | queue  | 要弹出的队列对象     |
 | *pval  | 存放弹出数据的首地址 |
-| len    | 希望弹出的数据长度   |
-| 返回值 | 实际弹出长度         |
+| len    | 希望弹出的数据个数   |
+| 返回值 | 实际弹出个数         |
 
 
 
@@ -282,13 +319,13 @@ bool tk_timer_func_init(uint32_t (*get_tick_func)(void));
 > **注意**：当配置**TOOLKIT_USING_TIMER**后，才能使用此函数。此函数需要用到**malloc**。
 
 ```c
-tk_timer_t tk_timer_create(tk_timer_timeout_callback *timeout_func);
+struct tk_timer *tk_timer_create(void(*timeout_callback)(struct tk_timer *timer));
 ```
 
-| 参数         | 描述                                       |
-| ------------ | ------------------------------------------ |
-| timeout_func | 定时器超时回调函数，不使用可配置为**NULL** |
-| 返回值       | 创建的定时器对象(**NULL**为创建失败)       |
+| 参数             | 描述                                   |
+| ---------------- | -------------------------------------- |
+| timeout_callback | 定时器超时回调函数，不使用可配置为NULL |
+| 返回值           | 创建的定时器对象(**NULL**为创建失败)   |
 
 **定时器创建示例：**：
 
@@ -300,7 +337,7 @@ uint32_t get_sys_tick(void)
 }
 
 /* 定时器超时回调函数 */
-void timer_timeout_callback(tk_timer_t timer)
+void timer_timeout_callback(struct tk_timer *timer)
 {
     printf("timeout_callback: timer timeout:%ld\n", get_sys_tick());
 }
@@ -331,7 +368,7 @@ int main(int argc, char *argv[])
 > 当配置**TOOLKIT_USING_TIMER**后，才能使用此函数。此函数需要用到**free**。必须为**动态**方式创建的定时器对象。
 
 ```c
-bool tk_timer_delete(tk_timer_t timer);
+bool tk_timer_delete(struct tk_timer *timer);
 ```
 
 | 参数   | 描述                                    |
@@ -342,14 +379,14 @@ bool tk_timer_delete(tk_timer_t timer);
 #### 3.3.4 静态初始化定时器
 
 ```c
-bool tk_timer_init(tk_timer_t timer, tk_timer_timeout_callback *timeout_func);
+bool tk_timer_init(struct tk_timer *timer, void (*timeout_callback)(struct tk_timer *timer));
 ```
 
-| 参数         | 描述                                       |
-| ------------ | ------------------------------------------ |
-| timer        | 要初始化的定时器对象                       |
-| timeout_func | 定时器超时回调函数，不使用可配置为**NULL** |
-| 返回值       | **true**：创建成功；**false**：创建失败    |
+| 参数             | 描述                                       |
+| ---------------- | ------------------------------------------ |
+| timer            | 要初始化的定时器对象                       |
+| timeout_callback | 定时器超时回调函数，不使用可配置为**NULL** |
+| 返回值           | **true**：创建成功；**false**：创建失败    |
 
 **队列创建示例：**
 
@@ -361,7 +398,7 @@ uint32_t get_sys_tick(void)
 }
 
 /* 定时器超时回调函数 */
-void timer_timeout_callback(tk_timer_t timer)
+void timer_timeout_callback(struct tk_timer *timer)
 {
     printf("timeout_callback: timer timeout:%ld\n", get_sys_tick());
 }
@@ -387,7 +424,7 @@ int main(int argc, char *argv[])
 > **注意**: 会将timer从定时器链表中移除。必须为**静态**方式创建的定时器对象。
 
 ```c
-bool tk_timer_detach(tk_timer_t timer);
+bool tk_timer_detach(struct tk_timer *timer);
 ```
 
 | 参数   | 描述                                    |
@@ -398,7 +435,7 @@ bool tk_timer_detach(tk_timer_t timer);
 #### 3.3.6 定时器启动
 
 ```c
-bool tk_timer_start(tk_timer_t timer, tk_timer_mode mode, uint16_t delay_tick);
+bool tk_timer_start(struct tk_timer *timer, tk_timer_mode mode, uint32_t delay_tick);
 ```
 
 | 参数       | 描述                                                         |
@@ -411,7 +448,7 @@ bool tk_timer_start(tk_timer_t timer, tk_timer_mode mode, uint16_t delay_tick);
 #### 3.3.7 定时器停止
 
 ```c
-bool tk_timer_stop(tk_timer_t timer);
+bool tk_timer_stop(struct tk_timer *timer);
 ```
 
 | 参数   | 描述                                    |
@@ -422,7 +459,7 @@ bool tk_timer_stop(tk_timer_t timer);
 #### 3.3.8 定时器继续
 
 ```c
-bool tk_timer_continue(tk_timer_t timer);
+bool tk_timer_continue(struct tk_timer *timer);
 ```
 
 | 参数   | 描述                                    |
@@ -435,7 +472,7 @@ bool tk_timer_continue(tk_timer_t timer);
 > **注意**：重启时长为最后一次启动定时器时配置的时长。
 
 ```c
-bool tk_timer_restart(tk_timer_t timer);
+bool tk_timer_restart(struct tk_timer *timer);
 ```
 
 | 参数   | 描述                                    |
@@ -446,7 +483,7 @@ bool tk_timer_restart(tk_timer_t timer);
 #### 3.3.10 获取定时器模式
 
 ```c
-tk_timer_mode tk_timer_get_mode(tk_timer_t timer);
+tk_timer_mode tk_timer_get_mode(struct tk_timer *timer);
 ```
 
 | 参数   | 描述               |
@@ -462,7 +499,7 @@ tk_timer_mode tk_timer_get_mode(tk_timer_t timer);
 #### 3.3.11 获取定时器状态
 
 ```c
-tk_timer_state tk_timer_get_state(tk_timer_t timer);
+tk_timer_state tk_timer_get_state(struct tk_timer *timer);
 ```
 
 | 参数   | 描述               |
@@ -493,7 +530,7 @@ bool tk_timer_loop_handler(void);
 **函数原型**：
 
 ```c
-typedef void (*tk_timer_timeout_callback)(struct tk_timer *timer);
+typedef void (*timeout_callback)(struct tk_timer *timer);
 ```
 
 > **说明**：超时回调函数可定义多个，即一个定时器对应一个回调函数，也可多个定时器对应一个回调函数。
@@ -502,30 +539,30 @@ typedef void (*tk_timer_timeout_callback)(struct tk_timer *timer);
 
   ```c
   /* 定义两个回调函数，对应定时器timer1和timer2 */
-  void timer1_timeout_callback(tk_timer_t timer){
+  void timer1_timeout_callback(struct tk_timer *timer){
   	printf("定时器1超时!\n");
   }
-  void timer2_timeout_callback(tk_timer_t timer){
+  void timer2_timeout_callback(struct tk_timer *timer){
   	printf("定时器2超时!\n");
   }
   /* 创建两个定时器,配置单独超时回调函数 */
-  timer1 = tk_timer_create((tk_timer_timeout_callback *)timer1_timeout_callback);
-  timer2 = tk_timer_create((tk_timer_timeout_callback *)timer2_timeout_callback);
+  timer1 = tk_timer_create((timeout_callback *)timer1_timeout_callback);
+  timer2 = tk_timer_create((timeout_callback *)timer2_timeout_callback);
   ```
 
 * **多对一**
 
   ```c
   /* 定时器timer1和timer2共用一个回调函数，在回调函数做区分 */
-  void timer_timeout_callback(tk_timer_t timer){
+  void timer_timeout_callback(struct tk_timer *timer){
   	if (timer == timer1)
   		printf("定时器1超时!\n");
       else if (timer == timer2)
           printf("定时器2超时!\n");
   }
   /* 创建两个定时器,使用相同的超时回调函数 */
-  timer1 = tk_timer_create((tk_timer_timeout_callback *)timer_timeout_callback);
-  timer2 = tk_timer_create((tk_timer_timeout_callback *)timer_timeout_callback);
+  timer1 = tk_timer_create((timeout_callback *)timer_timeout_callback);
+  timer2 = tk_timer_create((timeout_callback *)timer_timeout_callback);
   ```
 
   
@@ -541,7 +578,7 @@ typedef void (*tk_timer_timeout_callback)(struct tk_timer *timer);
 > **注意**：当配置**TOOLKIT_USING_EVENT**后，才能使用此函数。此函数需要用到**malloc**。
 
 ```c
-tk_event_t tk_event_create(void);
+struct tk_event *tk_event_create(void);
 ```
 
 | 参数   | 描述                               |
@@ -553,7 +590,7 @@ tk_event_t tk_event_create(void);
 > 当配置**TOOLKIT_USING_TIMER**后，才能使用此函数。此函数需要用到**free**。必须为**动态**方式创建的事件对象。
 
 ```c
-bool tk_event_delete(tk_event_t event);
+bool tk_event_delete(struct tk_event *event);
 ```
 
 | 参数   | 描述                                    |
@@ -566,7 +603,7 @@ bool tk_event_delete(tk_event_t event);
 
 
 ```c
-bool tk_event_init(tk_event_t event);
+bool tk_event_init(struct tk_event *event);
 ```
 
 | 参数   | 描述                                    |
@@ -577,7 +614,7 @@ bool tk_event_init(tk_event_t event);
 #### 3.4.4 发送事件标志
 
 ```c
-bool tk_event_send(tk_event_t event, uint32_t event_set);
+bool tk_event_send(struct tk_event *event, uint32_t event_set);
 ```
 
 | 参数      | 描述                                         |
@@ -589,7 +626,7 @@ bool tk_event_send(tk_event_t event, uint32_t event_set);
 #### 3.4.5 接收事件
 
 ```c
-bool tk_event_recv(tk_event_t event, uint32_t event_set, tk_event_option option, uint32_t *recved);
+bool tk_event_recv(struct tk_event *event, uint32_t event_set, uint8_t option, uint32_t *recved);
 ```
 
 | 参数      | 描述                                                         |

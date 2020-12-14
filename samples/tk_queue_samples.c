@@ -4,9 +4,16 @@
 *
 *动态方式创建queue2，缓存大小为50，模式为正常(存满为止)，存入 60个数据，并拿出10个数据，存入数据前
 *后打印缓冲区。
+*
+*静态方式创建queue3，队列元素类型为任意类型(测试为结构体)，缓存大小为10，模式为正常(存满为止)，
+*存入 15个数据，并拿出5个数据，存入数据前后打印缓冲区。
+*
+*若在单片机中断调用，需要注意在关键位置加入开关中断代码
+*
 * Change Logs:
 * Date           Author       Notes
 * 2020-06-04     zhangran     the first version
+* 2020-12-14     zhangran     Optimization example notes
 */
 
 #include <stdio.h>
@@ -60,10 +67,15 @@ int main(int argc, char *argv[])
 
     for (i = 0; i < sizeof(temp) / sizeof(temp[0]); i++)
         temp[i] = i;
+
+	/* 使用前打印缓存池内容 */
     printf_buffer("queue1_push_before", queue1.queue_pool, QUEUE1_POOL_SIZE);
+
+	/* 存入60个数据后打印 */
     tk_queue_push_multi(&queue1, temp, QUEUE1_POOL_SIZE + 10);
 	printf_buffer("queue1_push_after", queue1.queue_pool, QUEUE1_POOL_SIZE);
 
+	/* 拿出10个数据后打印 */
     int pop_len = tk_queue_pop_multi(&queue1, temp, 10);
     printf_buffer("queue1_pop", temp, pop_len);
 
@@ -76,10 +88,15 @@ int main(int argc, char *argv[])
 
     for (i = 0; i < sizeof(temp) / sizeof(temp[0]); i++)
         temp[i] = i;
+
+	/* 使用前打印缓存池内容 */
 	printf_buffer("queue2_push_before", (uint8_t *)queue2->queue_pool, QUEUE2_POOL_SIZE);
+
+	/* 存入60个数据后打印 */
     tk_queue_push_multi(queue2, temp, QUEUE2_POOL_SIZE + 10);
 	printf_buffer("queue2_push_after", (uint8_t *)queue2->queue_pool, QUEUE2_POOL_SIZE);
 
+	/* 拿出10个数据后打印 */
     pop_len = tk_queue_pop_multi(queue2, temp, 10);
     printf_buffer("queue2_pop", temp, pop_len);
 
@@ -107,12 +124,15 @@ int main(int argc, char *argv[])
 		test_temp[i].b = i;
 		test_temp[i].c = i;
 	}
-		
+	/* 使用前打印缓存池内容 */
 	printf_buffer("queue3_push_before", queue3.queue_pool, sizeof(queue3_pool));
+
+	/* 存入15个数据后打印，按字节打印 */
 	tk_queue_push_multi(&queue3, test_temp, 0x0F);
 	printf_buffer("queue3_push_after", queue3.queue_pool, sizeof(queue3_pool));
 
-	pop_len = tk_queue_pop_multi(&queue3, test_temp, 10);
+	/* 拿出5个数据后打印 */
+	pop_len = tk_queue_pop_multi(&queue3, test_temp, 5);
 	printf_buffer("queue3_pop", test_temp, pop_len*sizeof(queue3_pool[0]));
 
 	

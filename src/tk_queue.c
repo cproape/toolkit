@@ -245,7 +245,7 @@ bool tk_queue_pop(struct tk_queue *queue, void *pval)
  * @param queue 要压入的队列对象
  * @param pval 压入元素首地址
  * @param len 压入元素个数
- * @return uint16_t 实际压入长度
+ * @return uint16_t 实际压入个数
  */
 uint16_t tk_queue_push_multi(struct tk_queue *queue, void *pval, uint16_t len)
 {

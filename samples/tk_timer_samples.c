@@ -23,11 +23,11 @@ uint32_t get_sys_tick(void)
 /* 定时器句柄 */
 struct tk_timer timer1;
 struct tk_timer timer2;
-tk_timer_t timer3 = NULL;
-tk_timer_t timer4 = NULL;
+struct tk_timer *timer3 = NULL;
+struct tk_timer *timer4 = NULL;
 
 /* 定时器1和2共用的超时回调函数 */
-void timer_timeout_callback(tk_timer_t timer)
+void timer_timeout_callback(struct tk_timer *timer)
 {
     if (timer == &timer1)
         printf("timeout_callback: timer1 timeout:%ld\n", get_sys_tick());
@@ -36,13 +36,13 @@ void timer_timeout_callback(tk_timer_t timer)
 }
 
 /* 定时器3超时回调函数 */
-void timer3_timeout_callback(tk_timer_t timer)
+void timer3_timeout_callback(struct tk_timer *timer)
 {
     printf("timeout_callback: timer3 timeout:%ld\n", get_sys_tick());
 }
 
 /* 定时器4超时回调函数 */
-void timer4_timeout_callback(tk_timer_t timer)
+void timer4_timeout_callback(struct tk_timer *timer)
 {
     printf("timeout_callback: timer4 timeout:%ld\n", get_sys_tick());
 }
@@ -144,8 +144,8 @@ int main(void)
 	/* 初始化软件定时器功能，并配置tick获取回调函数*/
 	tk_timer_func_init(get_sys_tick);
 	/* 静态创建定时器1和2 */
-	tk_timer_init(&timer1, (tk_timer_timeout_callback*)timer1_timeout_cb);
-	tk_timer_init(&timer2, (tk_timer_timeout_callback*)timer2_timeout_cb);
+	tk_timer_init(&timer1, (timeout_callback*)timer1_timeout_cb);
+	tk_timer_init(&timer2, (timeout_callback*)timer2_timeout_cb);
 
 	/* 启动定时器1，循环模式，5秒时长 */
 	tk_timer_start(&timer1, TIMER_MODE_LOOP, 5000);

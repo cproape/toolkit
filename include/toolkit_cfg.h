@@ -18,7 +18,7 @@
 
 /* toolkit timer Configuration item */
 #define TK_TIMER_USING_CREATE
-#define TK_TIMER_USING_INTERVAL
+//#define TK_TIMER_USING_INTERVAL
 #define TK_TIMER_USING_TIMEOUT_CALLBACK
 
 /* toolkit event Configuration item */
