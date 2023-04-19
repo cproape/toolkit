@@ -1,13 +1,16 @@
-/*说明：
-*创建4个定时器
-*定时器1和2为静态创建，并共用一个超时回调函数。
-*定时器3和4为动态创建，单独有自己的超时回调函数
-*到达20 tick 脱离timer2和删除timer4，只有timer1和3工作
-*为了演示方便，main函数主循环1s tick加1，并循环运行tk_timer_loop_handler函数。
-* Change Logs:
-* Date           Author       Notes
-* 2020-01-29     zhangran     the first version
-*/
+/**
+ * 说明：
+ *      创建4个定时器
+ *      定时器1和2为静态创建，并共用一个超时回调函数。
+ *      定时器3和4为动态创建，单独有自己的超时回调函数
+ *      到达20 tick 脱离timer2和删除timer4，只有timer1和3工作
+ *      为了演示方便，main函数主循环1s tick加1，并循环运行tk_timer_loop_handler函数。
+ *
+ * Change Logs:
+ * Date           Author       Notes
+ * 2020-01-29     zhangran     the first version
+ * 2023-04-17     shadow3d     change comment format
+ */
 
 #include <windows.h>
 #include <stdio.h>
@@ -79,7 +82,7 @@ int main(int argc, char *argv[])
 
     /* 启动定时器3，循环模式，5tick时长 */
     tk_timer_start(timer3, TIMER_MODE_LOOP, 5);
-    /* 启动定时器3，循环模式，3tick时长 */
+    /* 启动定时器4，循环模式，3tick时长 */
     tk_timer_start(timer4, TIMER_MODE_LOOP, 3);
     while (1)
     {
