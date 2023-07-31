@@ -27,6 +27,7 @@
 * 2020-01-31     zhangran     add event extern code
 * 2020-11-28     zhangran     add queue peep&remove extern code
 * 2020-12-09     zhangran     Modify event option type to prevent warning
+* 2023-07-31     zhangran     tk_timer adds the user_data pointer
 */
 #ifndef __TOOLKIT_H_
 #define __TOOLKIT_H_
@@ -38,7 +39,7 @@
 #include <string.h>
 #include <toolkit_cfg.h>
 
-#define TK_SW_VERSION    "1.0.6"
+#define TK_SW_VERSION    "1.0.7"
 
 /* toolkit general */
 #ifdef TOOLKIT_USING_ASSERT
@@ -114,6 +115,7 @@ struct tk_timer
     uint32_t timer_tick_timeout;
     struct tk_timer *prev;
     struct tk_timer *next;
+    void *user_data;
 #ifdef TK_TIMER_USING_TIMEOUT_CALLBACK
 	void(*timeout_callback)(struct tk_timer *timer);
 #endif /* TK_TIMER_USING_TIMEOUT_CALLBACK */

@@ -1,7 +1,7 @@
 /**
  * 说明：
  *      创建4个定时器
- *      定时器1和2为静态创建，并共用一个超时回调函数。
+ *      定时器1和2为静态创建，通过user_data配置定时器名称，共用一个超时回调函数。
  *      定时器3和4为动态创建，单独有自己的超时回调函数
  *      到达20 tick 脱离timer2和删除timer4，只有timer1和3工作
  *      为了演示方便，main函数主循环1s tick加1，并循环运行tk_timer_loop_handler函数。
@@ -33,9 +33,9 @@ struct tk_timer *timer4 = NULL;
 void timer_timeout_callback(struct tk_timer *timer)
 {
     if (timer == &timer1)
-        printf("timeout_callback: timer1 timeout:%ld\n", get_sys_tick());
+        printf("timeout_callback: [%s] timeout:%ld\n", (const char*)timer->user_data, get_sys_tick());
     else if (timer == &timer2)
-        printf("timeout_callback: timer2 timeout:%ld\n", get_sys_tick());
+        printf("timeout_callback: [%s] timeout:%ld\n", (const char*)timer->user_data, get_sys_tick());
 }
 
 /* 定时器3超时回调函数 */
@@ -58,6 +58,8 @@ int main(int argc, char *argv[])
     /* 静态创建定时器1和2 */
     tk_timer_init(&timer1, timer_timeout_callback);
     tk_timer_init(&timer2, timer_timeout_callback);
+    timer1.user_data = "timer1";
+    timer2.user_data = "timer2";
 
     /* 动态创建定时器3 */
     timer3 = tk_timer_create(timer3_timeout_callback);
